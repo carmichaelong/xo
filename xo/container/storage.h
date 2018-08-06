@@ -15,41 +15,48 @@ namespace xo
 	class storage
 	{
 	public:
+		using value_type = T;
+		using label_type = L;
+
+		//struct const_frame {
+		//	const_frame( const storage< T, L >& s, index_t f ) : sto_( s ), ofs_( f * s.channel_size() ) {}
+		//	const T& operator[]( index_t i ) const { return sto_.data()[ ofs_ + i ]; }
+		//	const T& operator[]( const L& l ) const { return sto_.data()[ ofs_ + sto_.find_channel( l ) ]; }
+		//	const storage< T, L >& sto_;
+		//	index_t ofs_;
+		//};
+
+		template< typename S >
+		struct frame_ {
+			frame_( S& s, index_t f ) : sto_( s ), frame_idx_( f ) {}
+			auto& operator[]( index_t i ) const { return sto_( frame_idx_, i ); }
+			auto& operator[]( const typename S::label_type& l ) const { return sto_( frame_idx_, l ); }
+			S& sto_;
+			index_t frame_idx_;
+		};
+
+		using frame = frame_< storage< T, L > >;
+		using const_frame = frame_< const storage< T, L > >;
+
 		struct const_frame_iterator {
-			const_frame_iterator( const storage< T, L >& s, index_t f ) : sto_( s ), ofs_( f * s.channel_size() ) {}
-			using iterator_category = std::random_access_iterator_tag;
-			using value_type = T*;
+			const_frame_iterator( const storage< T, L >& s, index_t f ) : sto_( s ), frame_idx_( f * s.channel_size() ) {}
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = const_frame;
 			using difference_type = int;
-			using pointer = T**;
-			using reference = T*&;
+			using pointer = const_frame *;
+			using reference = const_frame &;
 
-			const_frame_iterator& operator++() { ofs_ += sto_.channel_size(); return *this; }
-			const_frame_iterator operator++( int ) { auto keepit = *this; ofs_ += sto_.channel_size(); return keepit; }
-			bool operator+( int i ) { ofs_ += i * sto_.channel_size(); }
+			const_frame_iterator& operator++() { frame_idx_ += sto_.channel_size(); return *this; }
+			const_frame_iterator operator++( int ) { auto keepit = *this; frame_idx_ += sto_.channel_size(); return keepit; }
+			bool operator+( int i ) { frame_idx_ += i * sto_.channel_size(); }
 
-			bool operator==( const const_frame_iterator& other ) { return ofs_ == other.ofs_; }
-			bool operator!=( const const_frame_iterator& other ) { return ofs_ != other.ofs_; }
-			typename const value_type& operator*() const { return &sto_.data_[ ofs_ ]; }
-			typename const value_type* operator->() const { return &( *pos_ ); }
+			bool operator==( const const_frame_iterator& other ) { return frame_idx_ == other.frame_idx_; }
+			bool operator!=( const const_frame_iterator& other ) { return frame_idx_ != other.frame_idx_; }
+			const value_type operator*() const { return frame( sto_, frame_idx_ ); }
+			const value_type operator->() const { return frame( sto_, frame_idx_ ); }
 
 			const storage< T, L >& sto_;
-			index_t ofs_;
-		};
-
-		struct const_frame {
-			const_frame( const storage< T, L >& s, index_t f ) : sto_( s ), ofs_( f * s.channel_size() ) {}
-			const T& operator[]( index_t i ) const { return sto_.data()[ ofs_ + i ]; }
-			const T& operator[]( const L& l ) const { return sto_.data()[ ofs_ + sto_.find_channel( l ) ]; }
-			const storage< T, L >& sto_;
-			index_t ofs_;
-		};
-
-		struct frame {
-			frame( storage< T, L >& s, index_t f ) : sto_( s ), fidx_( f ) {}
-			T& operator[]( index_t i ) const { return sto_( fidx_, i ); }
-			T& operator[]( const L& l ) const { return sto_( fidx_, sto_.find_or_add_channel( l ) ); }
-			storage< T, L >& sto_;
-			index_t fidx_;
+			index_t frame_idx_;
 		};
 
 		storage( size_t frames = 0, size_t channels = 0, T value = T() ) : frame_size_( frames ), labels_( channels ), data_( channels * frames, value ) {}
@@ -109,9 +116,13 @@ namespace xo
 		/// clear the storage
 		void clear() { frame_size_ = 0; labels_.clear(); data_.clear(); }
 
-		/// access value (no bounds checking)
+		/// access value by channel index (no bounds checking)
 		const T& operator()( index_t frame, index_t channel ) const { return data_[ frame * channel_size() + channel ]; }
 		T& operator()( index_t frame, index_t channel ) { return data_[ frame * channel_size() + channel ]; }
+
+		/// access value by channel label
+		const T& operator()( index_t frame, const L& label ) const { return data_[ frame * channel_size() + find_channel( label ) ]; }
+		T& operator()( index_t frame, const L& label ) { return data_[ frame * channel_size() + find_or_add_channel( label ) ]; }
 
 		/// access frame
 		const_frame operator[]( index_t f ) const { return const_frame( *this, f ); }
@@ -120,6 +131,10 @@ namespace xo
 		frame front() { return frame( *this, 0 ); }
 		const_frame back() const { return const_frame( *this, frame_size() - 1 ); }
 		frame back() { return frame( *this, frame_size() - 1 ); }
+
+		/// iterators
+		const_frame_iterator begin() const { return const_frame_iterator( *this, 0 ); }
+		const_frame_iterator end() const { return const_frame_iterator( *this, frame_size() ); }
 
 		/// get the interpolated value of a specific frame / channel
 		T get_interpolated_value( T frame_idx, index_t channel ) {

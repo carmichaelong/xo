@@ -17,6 +17,12 @@ namespace xo
 		path filename_;
 	};
 
+	template< typename T, typename L  > index_t	find_frame_index( const storage<T, L>& sto, const T& value, index_t channel = 0 ) {
+		auto l = [&]( const storage<T, L>::const_frame& a, const storage<T, L>::const_frame& b ) { return a[ channel ] < b[ channel ]; };
+		auto it = std::lower_bound( sto.begin(), sto.end(), value, l );
+		return it.frame_idx_;
+	}
+
 
 	template< typename T, typename L  > void write( storage<T, L>& sto, const string& str, const vec3_<T>& v ) {
 		auto f = sto.back();
@@ -33,13 +39,13 @@ namespace xo
 		f[ str + ".z" ] = q.z;
 	}
 
-	template< typename T > void read( typename storage<T>::const_frame& f, const string& str, vec3_<T>& v ) {
+	template< typename T > void read( typename const storage<T>::const_frame& f, const string& str, vec3_<T>& v ) {
 		v.x = f[ str + ".x" ];
 		v.y = f[ str + ".y" ];
 		v.z = f[ str + ".z" ];
 	}
 
-	template< typename T > void read( typename storage<T>::const_frame& f, const string& str, quat_<T>& q ) {
+	template< typename T > void read( typename const storage<T>::const_frame& f, const string& str, quat_<T>& q ) {
 		q.w = f[ str + ".w" ];
 		q.x = f[ str + ".x" ];
 		q.y = f[ str + ".y" ];
