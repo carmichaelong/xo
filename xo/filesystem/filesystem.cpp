@@ -149,7 +149,12 @@ namespace xo
 		for ( auto& f : filenames )
 			if ( file_exists( f ) )
 				return f;
-		xo_error( "Could not find " + to_str( filenames, " or " ) + " in " + xo::current_path().string() );
+
+		string names;
+		for ( auto& p : filenames )
+			names += p.string() + " ";
+
+		xo_error( "Could not find " + names + " in " + xo::current_path().string() );
 	}
 
 	XO_API bool create_directories( const path& folder )

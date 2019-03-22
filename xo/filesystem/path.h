@@ -72,7 +72,7 @@ namespace xo
 	inline std::ostream& operator<<( std::ostream& str, const path& p ) { return str << p.string(); }
 	inline bool operator<( const path& p1, const path& p2 ) { return p1.string() < p2.string(); }
 
-	template<> struct string_cast< path, void > {
+	template<> struct string_cast< path > {
 		static path from( const string& s ) { return path( s ); }
 		static string to( const path& v ) { return v.string(); }
 	};
