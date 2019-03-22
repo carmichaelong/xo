@@ -267,6 +267,15 @@ namespace xo
 	/// stream operator
 	XO_API std::ostream& to_stream( std::ostream& str, const prop_node& pn, int depth = 0, int key_align = 0 );
 	inline std::ostream& operator<<( std::ostream& str, const prop_node& pn ) { return to_stream( str, pn ); }
+
+	template<> struct string_cast<prop_node>
+	{
+		static string to( const prop_node& pn ) {
+			std::stringstream str;
+			str << pn;
+			return str.str();
+		}
+	};
 }
 
 #ifdef XO_COMP_MSVC

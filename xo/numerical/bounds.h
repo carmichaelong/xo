@@ -40,6 +40,10 @@ namespace xo
 	using boundsd = bounds< double >;
 	using boundsi = bounds< int >;
 
+	template<> struct string_cast<boundsd> {
+		static string to( const boundsd& v ) { return to_str( v.lower ) + ' ' + to_str( v.upper ); }
+	};
+
 	template< typename T > std::ostream& operator<<( std::ostream& str, const bounds< T >& v ) {
 		return str << v.lower << ' ' << v.upper;
 	}

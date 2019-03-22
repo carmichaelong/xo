@@ -2,6 +2,7 @@
 
 #include "xo/xo_types.h"
 #include "xo/string/string_tools.h"
+#include "xo/string/string_cast.h"
 #include <iosfwd>
 
 namespace xo
@@ -35,13 +36,17 @@ namespace xo
 	inline bool operator==( const version& v1, const version& v2 ) { return v1.to_int100() == v2.to_int100(); }
 	inline bool operator!=( const version& v1, const version& v2 ) { return v1.to_int100() != v2.to_int100(); }
 
-	inline std::ostream& operator<<( std::ostream& str, const version& ver ) { str << ver.str(); return str; }
-	inline std::istream& operator>>( std::istream& str, version& ver )
+	template<> struct string_cast<version>
 	{
-		char dummy;
-		str >> ver.major >> dummy >> ver.minor >> dummy >> ver.patch >> dummy;
-		if ( str.good() ) str >> ver.build;
-		if ( str.good() ) str >> ver.postfix;
-		return str;
-	}
+		static string to( const version& ver ) { return ver.str(); }
+		static version from( const string& s ) {
+			version ver;
+			std::stringstream str( s );
+			char dummy;
+			str >> ver.major >> dummy >> ver.minor >> dummy >> ver.patch >> dummy;
+			if ( str.good() ) str >> ver.build;
+			if ( str.good() ) str >> ver.postfix;
+			return ver;
+		}
+	};
 }
