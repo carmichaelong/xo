@@ -26,11 +26,11 @@ namespace xo
 	prop_node get_rapid_xml_node( rapidxml::xml_node<>* node )
 	{
 		// make new prop_node
-		prop_node pn = make_prop_node( (const char*)node->value() );
+		prop_node pn = make_prop_node( const_cast<const char*>( node->value() ) );
 
 		// add attributes
 		for ( rapidxml::xml_attribute<>* attr = node->first_attribute(); attr; attr = attr->next_attribute() )
-			pn.push_back( attr->name(), attr->value() );
+			pn.push_back( attr->name(), const_cast<const char*>( attr->value() ) );
 
 		// add child nodes
 		for ( rapidxml::xml_node<>* child = node->first_node(); child; child = child->next_sibling() )
